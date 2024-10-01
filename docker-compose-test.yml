@@ -1,0 +1,30 @@
+version: "3"
+
+services:
+  ollama:
+    image: prashant3167/medicalgpt_ollama:${IMAGE_TAG}
+    ports:
+      - 11434:11434
+    volumes:
+       - ./ollama:/ollama
+    entrypoint: ["/usr/bin/bash", "/start_ollama.sh"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:11434/api/ps"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+  web:
+    image: prashant3167/medicalgpt_api:${IMAGE_TAG}
+    ports:
+      - 8000:8000
+    volumes:
+      - ./app:/app
+      - ./test:/test
+    entrypoint: ["/bin/bash", "-c", "cd .. && pytest --reruns 3 --reruns-delay 5 test/test.py"]
+    healthcheck:
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    depends_on:
+      - ollama
